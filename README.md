@@ -26,7 +26,7 @@ A Dockerized application for tracking Granblue Fantasy (GBF) events and providin
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/peak24689/netpro_gbf_project.git
 cd netpro_gbf_project
 ```
 
