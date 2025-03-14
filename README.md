@@ -299,5 +299,3 @@ docker-compose down -v
 5. Create a Pull Request
 
 ## License
-
-[Add your license information here] 
