@@ -1,0 +1,7 @@
+tunnel: ${CLOUDFLARE_TUNNEL_TOKEN}
+credentials-file: /etc/cloudflared/creds.json
+
+ingress:
+  - hostname: gbf.naphat.party
+    service: http://app:5000
+  - service: http_status:404 

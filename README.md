@@ -132,12 +132,31 @@ The Flask API provides the following endpoints:
 
 ### Environment Variables
 
-The following environment variables can be configured in the `docker-compose.yml` file:
+The following environment variables can be configured in the `.env` file:
 
 - `MQTT_BROKER`: MQTT broker address (default: mosquitto)
 - `MQTT_PORT`: MQTT broker port (default: 1883)
 - `API_BASE_URL`: Flask API base URL (default: http://app:5000)
 - `DEEPSEEK_API_URL`: DeepSeek API URL (default: http://host.docker.internal:11434/api/chat)
+- `CLOUDFLARE_TUNNEL_TOKEN`: Your Cloudflare Zero Trust Tunnel token (required for the cloudflared service)
+
+To set up the environment variables:
+1. Copy the example environment file: `cp .env.example .env`
+2. Edit the `.env` file and add your Cloudflare tunnel token
+
+### Cloudflare Zero Trust Tunnel
+
+The application includes a Cloudflare Zero Trust Tunnel for secure remote access. This allows you to:
+- Access your application securely from anywhere without exposing ports directly to the internet
+- Benefit from Cloudflare's security features like DDoS protection
+- Apply access policies to control who can reach your services
+
+To use the Cloudflare tunnel:
+1. Create a tunnel in the Cloudflare Zero Trust dashboard
+2. Get your tunnel token and add it to the `.env` file
+3. Start the application with `docker-compose up -d`
+
+**Important:** Never commit your `.env` file to version control. The `.gitignore` file is configured to exclude it.
 
 ### DeepSeek Configuration
 
@@ -264,6 +283,28 @@ curl -X POST http://localhost:5000/cleanup-duplicates
    - The system has been updated to prevent new duplicates from being created when fetching data from the GBF Wiki.
    - If duplicates persist after cleanup, please check for any custom scripts or processes that might be inserting data without duplicate checking.
 
+9. Cloudflare Zero Trust Tunnel issues:
+   - To check if the cloudflared tunnel is running properly:
+     ```bash
+     docker-compose logs cloudflared
+     ```
+   - You should see messages like "Connection registered successfully" and "Route propagating" if the tunnel is working correctly.
+   - To test connectivity through the tunnel:
+     1. Log into your Cloudflare Zero Trust dashboard (https://one.dash.cloudflare.com/)
+     2. Navigate to Access > Tunnels
+     3. Find your tunnel in the list and check its status (should be "Active")
+     4. Click on your tunnel name to view details
+     5. Under the "Public Hostnames" tab, you'll see the URLs that are routed through your tunnel
+     6. Open one of these URLs in your browser to test if the service is accessible
+   - If the tunnel isn't connecting:
+     - Verify your token is correct in the `.env` file
+     - Check that the cloudflared service can reach the Cloudflare network (no firewall blocking outbound connections)
+     - Ensure the token hasn't expired or been revoked in the Cloudflare dashboard
+   - For detailed tunnel diagnostics:
+     ```bash
+     docker-compose exec cloudflared cloudflared tunnel info
+     ```
+
 ## Testing
 
 For comprehensive testing instructions, please refer to [testing.txt](testing.txt). This document includes detailed testing procedures for:
@@ -297,7 +338,3 @@ docker-compose down -v
 3. Commit your changes
 4. Push to the branch
 5. Create a Pull Request
-
-## License
-
-[Add your license information here] 

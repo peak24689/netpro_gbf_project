@@ -24,12 +24,19 @@ var/
 venv/
 ENV/
 
+# Environment variables
+.env
+
 # Database
 *.db
 *.sqlite3
 
 # Logs
 *.log
+
+# Docker volumes
+mosquitto_data/
+mosquitto_log/
 
 # OS specific
 .DS_Store
