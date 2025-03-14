@@ -1,0 +1,39 @@
+
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./events.db:/app/events.db
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+      - API_BASE_URL=http://app:5000
+      - DEEPSEEK_API_URL=http://host.docker.internal:11434/api/chat
+    depends_on:
+      - mosquitto
+    networks:
+      - gbf_network
+    restart: unless-stopped
+
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - gbf_network
+    restart: unless-stopped
+
+networks:
+  gbf_network:
+    driver: bridge
+
+volumes:
+  mosquitto_data:
+  mosquitto_log: 

@@ -1,0 +1,267 @@
+# GBF Event Tracker and Character Recommender - Testing Guide
+
+This document provides comprehensive testing instructions for the GBF Event Tracker and Character Recommender project.
+
+## Table of Contents
+
+1. [Basic Setup Testing](#1-basic-setup-testing)
+2. [API Testing](#2-api-testing)
+3. [MQTT Testing](#3-mqtt-testing)
+4. [Character Recommender Testing](#4-character-recommender-testing)
+5. [DeepSeek API Testing](#5-deepseek-api-testing)
+6. [Database Testing](#6-database-testing)
+7. [Integration Testing](#7-integration-testing)
+8. [Error Handling Testing](#8-error-handling-testing)
+9. [Performance Testing](#9-performance-testing)
+10. [Security Testing](#10-security-testing)
+
+### 1. Basic Setup Testing
+
+First, verify that all components are running correctly:
+
+```bash
+# Check container status
+docker-compose ps
+
+# Check logs for any errors
+docker-compose logs -f
+```
+
+### 2. API Testing
+
+Test the Flask API endpoints using curl or Postman:
+
+```bash
+# Get all events
+curl http://localhost:5000/events
+
+# Update events from GBF Wiki
+curl -X POST http://localhost:5000/update-events
+
+# Get all characters
+curl http://localhost:5000/characters
+
+# Update characters from GBF Wiki
+curl -X POST http://localhost:5000/update-characters
+
+# Add a new event manually
+curl -X POST http://localhost:5000/add-event \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Test Event", "time_start": "2024-03-20 00:00:00", "time_end": "2024-03-25 00:00:00"}'
+
+# Update an existing event
+curl -X PUT http://localhost:5000/update-event/1 \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Updated Test Event", "time_start": "2024-03-20 00:00:00", "time_end": "2024-03-25 00:00:00"}'
+
+# Delete an event
+curl -X DELETE http://localhost:5000/delete-event/1
+```
+
+### 3. MQTT Testing
+
+Test the MQTT notifications using the recommended method:
+
+```bash
+# This is the most reliable method to view MQTT messages
+docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/#" -v
+```
+
+You can also subscribe to specific topics:
+```bash
+# Current events
+docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/current" -v
+
+# Upcoming events
+docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/upcoming" -v
+
+# Events ending soon
+docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/ending_soon" -v
+
+# Events starting soon
+docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/starting_soon" -v
+```
+
+### 3.1 MQTT Subscription Troubleshooting
+
+If you're not seeing any messages:
+
+1. Verify the MQTT broker is running and accessible:
+```bash
+# Check if the mosquitto container is running
+docker-compose ps mosquitto
+
+# Check mosquitto logs for any errors
+docker-compose logs mosquitto
+```
+
+2. Publish a test message to verify your subscription is working:
+```bash
+# Publish a test message with the retain flag
+docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_pub -t "gbf/events/test" -m "Test message" -r
+```
+
+3. Force event updates to trigger notifications:
+```bash
+# Trigger event updates to generate MQTT messages
+curl -X POST http://localhost:5000/update-events
+```
+
+Note: Due to network connectivity issues between host machines and Docker containers, the most reliable method for testing MQTT messages is to use mosquitto_sub directly from within the mosquitto container as shown above.
+
+### 4. Character Recommender Testing
+
+Test the character recommender with different options:
+
+```bash
+# Test with Fire element and general rating
+docker-compose exec app python deepseek_recommender.py --element Fire --rating general
+
+# Test with Water element and grind rating
+docker-compose exec app python deepseek_recommender.py --element Water --rating grind
+
+# Test with all elements and high-level rating
+docker-compose exec app python deepseek_recommender.py --rating high-level
+
+# Test with a limit on the number of characters
+docker-compose exec app python deepseek_recommender.py --element Light --rating full-auto --limit 5
+```
+
+### 5. DeepSeek API Testing
+
+Test the DeepSeek API connection:
+
+```bash
+# Test basic API connectivity
+curl -X POST http://localhost:11434/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"model":"deepseek-r1:1.5b","messages":[{"role":"user","content":"Hello"}]}'
+
+# Test with character data
+curl -X POST http://localhost:11434/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek-r1:1.5b",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant that provides character recommendations based on game data."},
+      {"role": "user", "content": "Here is the character data: [{\"name\":\"Test Character\",\"element\":\"Fire\",\"gw_rating\":9.5}]. Based on this, can you recommend the top 3 characters?"}
+    ],
+    "stream": false
+  }'
+```
+
+### 6. Database Testing
+
+Test the SQLite database:
+
+```bash
+# Access the database inside the container
+docker-compose exec app sqlite3 events.db
+
+# Once in the SQLite prompt, you can run:
+.tables                    # List all tables
+SELECT * FROM events;      # View all events
+SELECT * FROM characters;  # View all characters
+.quit                     # Exit SQLite
+```
+
+### 7. Integration Testing
+
+Test the complete workflow:
+
+1. Start fresh:
+```bash
+docker-compose down -v
+docker-compose up --build
+```
+
+2. Update the data:
+```bash
+curl -X POST http://localhost:5000/update-events
+curl -X POST http://localhost:5000/update-characters
+```
+
+3. Subscribe to MQTT topics:
+```bash
+mosquitto_sub -h localhost -p 1883 -t "gbf/events/#"
+```
+
+4. Get character recommendations:
+```bash
+docker-compose exec app python deepseek_recommender.py --element Fire --rating general
+```
+
+### 8. Error Handling Testing
+
+Test error scenarios:
+
+1. Stop the MQTT broker:
+```bash
+docker-compose stop mosquitto
+```
+Check the event notifier logs for reconnection attempts.
+
+2. Stop Ollama:
+```bash
+# On your host machine
+pkill ollama
+```
+Try running the character recommender to see error handling.
+
+3. Database corruption:
+```bash
+# Stop containers
+docker-compose down
+
+# Corrupt the database
+echo "corrupted" > events.db
+
+# Restart containers
+docker-compose up
+```
+Check the logs for database initialization.
+
+### 9. Performance Testing
+
+Test system performance:
+
+1. Monitor resource usage:
+```bash
+docker stats
+```
+
+2. Check log sizes:
+```bash
+docker-compose exec mosquitto ls -l /mosquitto/log
+```
+
+3. Monitor MQTT message rates:
+```bash
+mosquitto_sub -h localhost -p 1883 -t "gbf/events/#" | pv > /dev/null
+```
+
+### 10. Security Testing
+
+Test security measures:
+
+1. MQTT authentication (if configured):
+```bash
+mosquitto_sub -h localhost -p 1883 -t "gbf/events/#" -u your_username -P your_password
+```
+
+2. API endpoint security:
+```bash
+# Test CORS
+curl -X OPTIONS http://localhost:5000/events \
+  -H "Origin: http://malicious-site.com" \
+  -H "Access-Control-Request-Method: GET"
+```
+
+## Additional Notes
+
+Remember to check the logs for any errors or warnings during testing:
+```bash
+docker-compose logs -f
+```
+
+For more information about the project setup and configuration, please refer to the main README.md file. 
