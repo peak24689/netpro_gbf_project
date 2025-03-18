@@ -52,3 +52,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo 
+
+# Cloudflare credentials
+/etc/cloudflared/creds.json
+creds.json
