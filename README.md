@@ -56,18 +56,24 @@ docker-compose up -d --build
 
 ### Event Tracking
 
-The system automatically tracks GBF events and sends notifications through MQTT. You can subscribe to the following MQTT topics using the recommended method:
+The system automatically tracks GBF events and sends notifications through MQTT. You can subscribe to the following MQTT topics:
 
 ```bash
-# View all event topics (recommended method)
-docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/#" -v
+# View all event topics (recommended method - subscribe from host machine)
+# Use your machine's actual IP address instead of localhost to properly receive retained messages
+mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/#" -v
 
 # Or subscribe to specific topics:
-docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/current" -v
-docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/upcoming" -v
-docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/ending_soon" -v
-docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/starting_soon" -v
+mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/current" -v
+mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/upcoming" -v
+mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/ending_soon" -v
+mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/starting_soon" -v
 ```
+
+**Important Note**: Using your machine's actual IP address (e.g., `192.168.1.100`) instead of `localhost` is required to properly receive retained messages. This is due to how Docker networking identifies clients connecting to the MQTT broker. You can find your IP address using:
+- Windows: Run `ipconfig` in Command Prompt and look for IPv4 Address
+- macOS: Run `ifconfig | grep "inet " | grep -v 127.0.0.1` in Terminal
+- Linux: Run `hostname -I | awk '{print $1}'` in Terminal
 
 Available MQTT topics:
 - `gbf/events/current`: Currently active events
@@ -250,20 +256,26 @@ curl -X POST http://localhost:5000/cleanup-duplicates
      docker-compose logs mosquitto
      ```
    - The Docker setup uses service names for networking. If you're running the services separately, update the `MQTT_BROKER` environment variable.
-   - **RECOMMENDED METHOD**: Use mosquitto_sub directly from the mosquitto container:
-     ```bash
-     # This is the most reliable method to view MQTT messages
-     docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/#" -v
-     ```
    - To publish a test message and verify your subscription is working:
      ```bash
      # Publish a test message with the retain flag
-     docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_pub -t "gbf/events/test" -m "Test message" -r
+     # Use your machine's actual IP address instead of localhost
+     mosquitto_pub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/test" -m "Test message" -r
+     ```
+   - If you're not receiving retained messages, use your machine's actual IP address instead of localhost:
+     ```bash
+     # Replace with your actual IP address (not localhost)
+     mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/#" -v
      ```
    - If you're still not seeing any messages, force an event update:
      ```bash
      # Trigger event updates to generate MQTT messages
      curl -X POST http://localhost:5000/update-events
+     ```
+   - As a last resort, if other methods fail, you can subscribe from inside the mosquitto container:
+     ```bash
+     # Only use this method if subscribing from the host doesn't work
+     docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/#" -v
      ```
    - See the detailed MQTT troubleshooting section in [testing.txt](testing.txt#31-mqtt-subscription-troubleshooting) for more options.
 

@@ -63,24 +63,30 @@ curl -X DELETE http://localhost:5000/delete-event/1
 Test the MQTT notifications using the recommended method:
 
 ```bash
-# This is the most reliable method to view MQTT messages
-docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/#" -v
+# This is the recommended method to view MQTT messages (from host machine)
+# Use your machine's actual IP address instead of localhost to properly receive retained messages
+mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/#" -v
 ```
 
 You can also subscribe to specific topics:
 ```bash
 # Current events
-docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/current" -v
+mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/current" -v
 
 # Upcoming events
-docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/upcoming" -v
+mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/upcoming" -v
 
 # Events ending soon
-docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/ending_soon" -v
+mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/ending_soon" -v
 
 # Events starting soon
-docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/starting_soon" -v
+mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/starting_soon" -v
 ```
+
+**Note**: Replace `<YOUR_MACHINE_IP>` with your actual machine's IP address. Find your IP address using:
+- Windows: Run `ipconfig` in Command Prompt and look for IPv4 Address
+- macOS: Run `ifconfig | grep "inet " | grep -v 127.0.0.1` in Terminal
+- Linux: Run `hostname -I | awk '{print $1}'` in Terminal
 
 ### 3.1 MQTT Subscription Troubleshooting
 
@@ -95,19 +101,30 @@ docker-compose ps mosquitto
 docker-compose logs mosquitto
 ```
 
-2. Publish a test message to verify your subscription is working:
+2. **Important**: For receiving retained messages, use your machine's actual IP address instead of localhost:
 ```bash
-# Publish a test message with the retain flag
-docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_pub -t "gbf/events/test" -m "Test message" -r
+# Using localhost may NOT properly receive retained messages
+mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/#" -v
 ```
 
-3. Force event updates to trigger notifications:
+3. Publish a test message to verify your subscription is working:
+```bash
+# Publish a test message with the retain flag
+# Use your machine's actual IP address instead of localhost
+mosquitto_pub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/test" -m "Test message" -r
+```
+
+4. Force event updates to trigger notifications:
 ```bash
 # Trigger event updates to generate MQTT messages
 curl -X POST http://localhost:5000/update-events
 ```
 
-Note: Due to network connectivity issues between host machines and Docker containers, the most reliable method for testing MQTT messages is to use mosquitto_sub directly from within the mosquitto container as shown above.
+5. As a last resort, if network connectivity issues persist between your host machine and Docker containers, you can try subscribing directly from within the mosquitto container:
+```bash
+# Only use this method if subscribing from the host doesn't work
+docker exec -it netpro_gbf_project-mosquitto-1 mosquitto_sub -t "gbf/events/#" -v
+```
 
 ### 4. Character Recommender Testing
 
@@ -183,7 +200,8 @@ curl -X POST http://localhost:5000/update-characters
 
 3. Subscribe to MQTT topics:
 ```bash
-mosquitto_sub -h localhost -p 1883 -t "gbf/events/#"
+# Use your machine's actual IP address instead of localhost
+mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/#"
 ```
 
 4. Get character recommendations:
@@ -237,7 +255,8 @@ docker-compose exec mosquitto ls -l /mosquitto/log
 
 3. Monitor MQTT message rates:
 ```bash
-mosquitto_sub -h localhost -p 1883 -t "gbf/events/#" | pv > /dev/null
+# Use your machine's actual IP address instead of localhost
+mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/#" | pv > /dev/null
 ```
 
 ### 10. Security Testing
@@ -246,7 +265,8 @@ Test security measures:
 
 1. MQTT authentication (if configured):
 ```bash
-mosquitto_sub -h localhost -p 1883 -t "gbf/events/#" -u your_username -P your_password
+# Use your machine's actual IP address instead of localhost
+mosquitto_sub -h <YOUR_MACHINE_IP> -p 1883 -t "gbf/events/#" -u your_username -P your_password
 ```
 
 2. API endpoint security:
