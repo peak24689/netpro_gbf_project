@@ -21,6 +21,7 @@ A Dockerized application for tracking Granblue Fantasy (GBF) events and providin
 - Docker Compose
 - Git (for cloning the repository)
 - DeepSeek AI model (r1:1.5b) running locally or accessible via API
+- User-Agent that has been allowed by cloudfalre
 
 ## Installation
 
