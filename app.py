@@ -113,7 +113,7 @@ def fetch_and_store_events():
     """Fetch events from GBF Wiki and store in database."""
     url = "https://gbf.wiki/api.php"
     headers = {
-        "User-Agent": "Praision/1.0 (npoison@discord)"
+        "User-Agent": "MyProjectBot/1.0 (contact@example.com)"
     }
     params = {
         'action': 'cargoquery',
@@ -147,7 +147,7 @@ def fetch_and_store_events():
 def fetch_and_store_characters():
     """Fetch character data from GBF Wiki and store in the database."""
     url = "https://gbf.wiki/api.php"
-    headers = {"User-Agent": "Praision/1.0 (npoison@discord)"}
+    headers = {"User-Agent": "MyProjectBot/1.0 (contact@example.com)"}
     params = {
         'action': 'cargoquery',
         'format': 'json',
@@ -360,7 +360,7 @@ if __name__ == '__main__':
             # Call the function directly instead of through the route
             url = "https://gbf.wiki/api.php"
             headers = {
-                "User-Agent": "Praision/1.0 (npoison@discord)"
+                "User-Agent": "MyProjectBot/1.0 (contact@example.com)"
             }
             params = {
                 'action': 'cargoquery',
@@ -395,7 +395,7 @@ if __name__ == '__main__':
         try:
             # Call the character update function directly
             url = "https://gbf.wiki/api.php"
-            headers = {"User-Agent": "Praision/1.0 (npoison@discord)"}
+            headers = {"User-Agent": "MyProjectBot/1.0 (contact@example.com)"}
             params = {
                 'action': 'cargoquery',
                 'format': 'json',
